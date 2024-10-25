@@ -1,48 +1,53 @@
 #!/usr/bin/python3
 """
-Documenting Module
+Reads stdin line by line and computes metrics
 """
 
 import sys
-import re
+
+total_size = 0
+count = 0
+status_codes = {}
+codes = ["200", "301", "400", "401", "403", "404", "405", "500"]
 
 
-def output(log: dict) -> None:
-    """
-    helper function to display stats
-    """
-    print("File size: {}".format(log["file_size"]))
-    for code in sorted(log["code_frequency"]):
-        if log["code_frequency"][code]:
-            print("{}: {}".format(code, log["code_frequency"][code]))
-
-
-if __name__ == "__main__":
-    regex = re.compile(
-    r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} - \[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}.\d+\] "GET /projects/260 HTTP/1.1" (.{3}) (\d+)')  # nopep8
-
-    line_count = 0
-    log = {}
-    log["file_size"] = 0
-    log["code_frequency"] = {
-        str(code): 0 for code in [
-            200, 301, 400, 401, 403, 404, 405, 500]}
-
+if __name__ == '__main__':
+    def print_logs(status_codes: dict, total_size: int) -> None:
+        """Handles printing after 10 lines are read and/or after
+        CTRL-C is pressed with status codes sorted in ascending order
+        Params:
+            status_codes: a dict containing status codes and their occurence
+            total_size: total file size at the time of printing
+        Returns nothing
+        """
+        print(f'File size: {total_size}')
+        for code, num in sorted(status_codes.items()):
+            print(f'{code}: {num}')
     try:
         for line in sys.stdin:
-            line = line.strip()
-            match = regex.fullmatch(line)
-            if (match):
-                line_count += 1
-                code = match.group(1)
-                file_size = int(match.group(2))
-
-                log["file_size"] += file_size
-
-                if (code.isdecimal()):
-                    log["code_frequency"][code] += 1
-
-                if (line_count % 10 == 0):
-                    output(log)
-    finally:
-        output(log)
+            """Loops through stdinput until CTRL-C is pressed
+            Returns nothing
+            """
+            my_lst = line.split(" ")
+            try:
+                status_code = my_lst[-2]
+                file_size = int(my_lst[-1])
+                if status_code not in codes:
+                    if file_size:
+                        total_size += file_size
+                    continue
+                if status_codes.get(status_code):
+                    status_codes[status_code] += 1
+                else:
+                    status_codes[status_code] = 1
+                total_size += file_size
+                count += 1
+                if count == 10:
+                    print_logs(status_codes, total_size)
+                    count = 0
+            except BaseException:
+                pass
+        print_logs(status_codes, total_size)
+    except KeyboardInterrupt:
+        print_logs(status_codes, total_size)
+        raise
