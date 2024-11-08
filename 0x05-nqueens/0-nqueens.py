@@ -1,59 +1,35 @@
-# !/usr/bin/python3
-"""N Queens"""
+#!/usr/bin/python3
 import sys
 
 
-def print_board(board, n):
-    """Print allocated positions to the queen"""
-    b = []
-
-    for i in range(n):
-        for j in range(n):
-            if j == board[i]:
-                b.append([i, j])
-    print(b)
-
-
-def is_position_safe(board, i, j, r):
-    """Checks if the position is safe for the queen"""
-    return board[i] in (j, j - i + r, i - r + j)
+def print_solution(board):
+    """Prints the solution in the required format"""
+    solution = []
+    for row in range(len(board)):
+        for col in range(len(board)):
+            if board[row] == col:
+                solution.append([row, col])
+    print(solution)
 
 
-def safe_positions(board, row, n):
-    """Find all safe positions where the queen can be allocated"""
-    if row == n:
-        print_board(board, n)
-
-    else:
-        for j in range(n):
-            allowed = True
-            for i in range(row):
-                if is_position_safe(board, i, j, row):
-                    allowed = False
-            if allowed:
-                board[row] = j
-                safe_positions(board, row + 1, n)
+def is_safe(board, row, col):
+    """Checks if it's safe to place a queen at board[row][col]"""
+    for i in range(row):
+        if board[i] == col or \
+                board[i] - i == col - row or \
+                board[i] + i == col + row:
+            return False
+    return True
 
 
-def create_board(size):
-    """Generates the board"""
-    return [0 * size for i in range(size)]
+def solve_nqueens(board, row):
+    """Recursively solves the N Queens problem"""
+    if row == len(board):
+        print_solution(board)
+        return
 
-
-if len(sys.argv) != 2:
-    print("Usage: nqueens N")
-    exit(1)
-
-try:
-    n = int(sys.argv[1])
-except BaseException:
-    print("N must be a number")
-    exit(1)
-
-if (n < 4):
-    print("N must be at least 4")
-    exit(1)
-
-board = create_board(int(n))
-row = 0
-safe_positions(board, row, int(n))
+    for col in range(len(board)):
+        if is_safe(board, row, col):
+            board[row] = col
+            solve_nqueens(board, row + 1)
+            board[row] = -1  # Backtrack
